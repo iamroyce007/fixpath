@@ -1,0 +1,5 @@
+[project]
+name = "fixpath"
+version = "0.1.0"
+description = "Smart Guided Troubleshooting Engine (Samsung PRISM Gen AI Hackathon 3.0, Theme 2)"
+requires-python = ">=3.11"
