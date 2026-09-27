@@ -25,7 +25,8 @@ IMPERATIVE_VERBS = {
 }
 LEAD_INS = re.compile(
     r"^(?:(?:first|next|then|now|alternatively|finally|also|afterward|afterwards|please|simply|"
-    r"just|and)\b[,]?\s*)+",
+    r"just|and|you can(?: also)?|you may(?: also)?|you should|you will need to|you'll need to|"
+    r"we recommend that you|it is recommended to|try to)\b[,]?\s*)+",
     re.I,
 )
 # "On devices with a Power button: Press ..." / "For Smart View: Swipe ..."
@@ -110,8 +111,10 @@ def _core(sentence: str) -> str:
         s = LEAD_INS.sub("", s)
         if not _starts_imperative(s):
             m = CONDITIONAL_RE.match(s)
-            if m and _starts_imperative(s[m.end():]):
-                s = s[m.end():]
+            if m:
+                rest = LEAD_INS.sub("", s[m.end():])
+                if _starts_imperative(rest):
+                    s = rest
         if s == before:
             break
     return s.strip()
@@ -145,9 +148,22 @@ def atomic_steps(sentence: str) -> list[str]:
         return []
     body = core.rstrip(".!? ")
     parts = [p.strip() for p in CLAUSE_SPLIT_RE.split(body) if p and p.strip()]
-    if len(parts) > 1 and all(_starts_imperative(p) and len(p.split()) >= 2 for p in parts):
-        return [_finish(p) for p in parts]
-    return [_finish(body)]
+    dangling = ("to", "for", "on", "in", "with", "into", "from", "of")
+    merged: list[str] = []
+    for p in parts:  # "search for" + "select X" -> "search for and select X"
+        if merged and merged[-1].split()[-1].lower() in dangling:
+            merged[-1] = f"{merged[-1]} and {p}"
+        else:
+            merged.append(p)
+    if len(merged) > 1 and all(_starts_imperative(p) and len(p.split()) >= 2 for p in merged):
+        steps = [_finish(p) for p in merged]
+    else:
+        steps = [_finish(body)]
+    # A bare "Remove it." loses its meaning; keep the whole sentence instead.
+    if len(steps) == 1 and len(steps[0].split()) <= 3 and re.search(r"\b(it|them|this)\b", steps[0], re.I):
+        steps = [_finish(sentence.strip())]
+    # Drop text-extraction garbage (words glued together without spaces).
+    return [s for s in steps if not re.search(r"[A-Za-z,]{25,}", s) and len(s.split()) <= 40]
 
 
 def settings_path(sentence: str) -> list[str]:

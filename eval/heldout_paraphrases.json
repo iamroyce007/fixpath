@@ -1,0 +1,23 @@
+{
+  "_readme": "Hand-written paraphrases, never pre-cached and written in a different style from compiler/paraphrase.py, used to measure the semantic cache hit rate on unseen phrasings. Keyed by kit row id.",
+  "row_1": ["Gmail makes my tablet display flash and then go dark every time I open a message", "tablet goes blank right after tapping an email, works for a bit then blank again"],
+  "row_2": ["When I look up stocks or open Quick Assist the whole display turns white and empty", "phone screen shows nothing, just white, in several apps"],
+  "row_3": ["my foldable display is pitch black and I cannot move my data off it", "black screen on my fold, no way to use Data Transfer"],
+  "row_4": ["a month after buying it the display died and stays dark even when powering on", "phone screen randomly went black by itself, nothing shows"],
+  "row_5": ["tablet display stays empty while trying to scan the Data Transfer QR code", "can't transfer data because the tablet screen is blank at the QR scan step"],
+  "row_7": ["only three icons light up on my tablet and the rest of the display is dark", "tablet screen mostly dark, just a few app icons glowing, apps won't launch"],
+  "row_8": ["the picture on my new phone is shrunk and won't use the full screen", "display content too small, doesn't stretch to full size"],
+  "row_9": ["the inside display of my foldable is dead and ignores touch but the cover screen is fine", "inner fold screen shows nothing and touch does nothing"],
+  "row_10": ["opening my foldable makes the display flicker and then go blank", "fold phone flickers then turns black when unfolded, can't reach settings"],
+  "row_11": ["one half of my foldable's display is black and the other half works", "half the screen is dead on my fold"],
+  "row_12": ["how do I get rid of the floating round shortcut button on my display", "there's a circle menu floating on my screen with home/back shortcuts, want it gone"],
+  "row_13": ["new phone screen is blank, no activation prompt after the carrier switched lines", "after the carrier shut off my old phone the new one shows a blank display"],
+  "row_14": ["my phone's glass is smashed all over and unusable", "totally shattered screen, phone can't be used"],
+  "row_15": ["phone boots to a blue screen with small text and never starts", "only a blue or black screen with tiny writing at startup, holding power doesn't help"],
+  "row_16": ["display blinks really fast whenever the charger is connected", "plugging in to charge makes my screen flash for a moment"],
+  "row_17": ["dark screen that sometimes scrolls, nothing visible, can't do Data Transfer", "screen blank with random scrolling and I need to transfer data"],
+  "row_19": ["cracked again along the hinge and some areas don't register touch", "fold screen crack at the crease, touch dead in spots, hard to see"],
+  "row_20": ["the display looked warped from day one, I want to run a diagnostic", "screen distorted straight out of the box, need a test"],
+  "row_21": ["touch input is lagging and slow to respond on my phone", "there's a noticeable delay between my taps and the screen reacting"],
+  "row_22": ["phone rings and works but the display stays black, no damage", "screen won't come on even though calls come through fine"]
+}

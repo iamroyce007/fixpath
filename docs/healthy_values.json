@@ -1,0 +1,8 @@
+{
+  "_readme": "Assumed healthy value per validation key, used by app/diagnose.py when a plan's validationDeeplink has no explicit value. The kit gives no expected values, so these are documented assumptions.",
+  "Touch sensitivity": "False",
+  "Adaptive brightness": "True",
+  "Navigation bar": "Buttons",
+  "Swipe for split screen": "False",
+  "Swipe for pop-up view": "False"
+}
