@@ -24,8 +24,8 @@ STOP = {
 }
 TV_RE = re.compile(r"\b(tv|television|smartthings)\b", re.I)
 APPLIANCE_RE = re.compile(r"\b(refrigerator|fridge|air conditioner|washer|dryer|oven|vacuum|dishwasher)\b", re.I)
-OFF_RE = re.compile(r"\b(disable|disabling|turn(?:ing)? off|switch(?:ing)? off|deactivate|to disable it)\b", re.I)
-ON_RE = re.compile(r"\b(enable|enabling|turn(?:ing)? on|switch(?:ing)? on|activate)\b", re.I)
+OFF_RE = re.compile(r"\b(disabl\w*|turn(?:ing)? (?:it |this |them )?off|switch(?:ing)? (?:it |this )?off|deactivat\w*)\b", re.I)
+ON_RE = re.compile(r"\b(enabl\w*|turn(?:ing)? (?:it |this |them )?on|switch(?:ing)? (?:it |this )?on|activat\w*)\b", re.I)
 
 W_BM25, W_EMB = 0.45, 0.55
 POLARITY_BONUS = 0.12
@@ -106,7 +106,10 @@ class Candidate:
 
 
 class CatalogIndex:
-    def __init__(self, catalog: Catalog, embedder: Optional[Embedder] = None) -> None:
+    def __init__(self, catalog: Catalog, embedder: Optional[Embedder] = None,
+                 mode: str = "hybrid") -> None:
+        """mode: hybrid (BM25 + embeddings + key match) or keyword (BM25 + key match only)."""
+        self.mode = mode
         self.catalog = catalog
         self.embedder = embedder or get_embedder()
         self.entries = [
@@ -149,7 +152,7 @@ class CatalogIndex:
         bm = bm / bm.max() if bm.max() > 0 else bm
         q = vector if vector is not None else self.embedder.encode_one(text)
         emb = np.clip(self.vectors @ q, 0, 1)
-        score = W_BM25 * bm + W_EMB * emb
+        score = W_BM25 * bm + W_EMB * emb if self.mode == "hybrid" else bm * (W_BM25 + W_EMB) * 0.9
 
         want_off, want_on = bool(OFF_RE.search(full)), bool(ON_RE.search(full))
         key_match = np.zeros(len(self.entries), dtype=np.float32)
