@@ -20,38 +20,38 @@
  "latency": {
   "canonical_cold": {
    "n": 20,
-   "p50": 0.86,
-   "p95": 1.98,
+   "p50": 1.68,
+   "p95": 3.84,
    "cache_hit_rate": 1.0
   },
   "repeat_exact": {
    "n": 40,
-   "p50": 0.79,
-   "p95": 1.11,
+   "p50": 1.03,
+   "p95": 2.06,
    "cache_hit_rate": 1.0
   },
   "paraphrase_heldout": {
    "n": 40,
-   "p50": 0.93,
-   "p95": 7.67,
+   "p50": 1.02,
+   "p95": 10.39,
    "cache_hit_rate": 1.0
   },
   "paraphrase_no_siis": {
    "n": 40,
-   "p50": 7.56,
-   "p95": 168.96,
+   "p50": 8.76,
+   "p95": 152.82,
    "cache_hit_rate": 0.75
   },
   "unseen_siis": {
    "n": 36,
-   "p50": 39.58,
-   "p95": 163.13,
+   "p50": 37.75,
+   "p95": 144.9,
    "cache_hit_rate": 0.0
   },
   "off_topic_no_siis": {
    "n": 2,
-   "p50": 6.89,
-   "p95": 7.32,
+   "p50": 6.82,
+   "p95": 7.47,
    "cache_hit_rate": 0.0
   }
  },

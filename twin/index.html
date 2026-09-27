@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FixPath Digital Twin</title>
+<style>
+:root{
+  --bg:#0d1117; --panel:#161b22; --panel2:#1c232d; --line:#2a3340; --text:#e6edf3; --muted:#8b98a8;
+  --accent:#4f8cff; --accent2:#7c5cff; --ok:#2fbf71; --warn:#f0a93b; --crit:#f25f5c; --chip:#222b37;
+  --phone:#05070a; --screen:#0f141b; --screen-card:#18202b; --radius:14px;
+  font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);min-height:100vh}
+header{display:flex;align-items:center;gap:14px;padding:14px 22px;border-bottom:1px solid var(--line);background:linear-gradient(90deg,#111827,#0d1117)}
+.logo{width:34px;height:34px;border-radius:10px;background:conic-gradient(from 200deg,var(--accent),var(--accent2),var(--ok),var(--accent));display:grid;place-items:center;font-weight:800}
+header h1{font-size:18px;margin:0;font-weight:700;letter-spacing:.2px}
+header .sub{color:var(--muted);font-size:13px}
+header .spacer{flex:1}
+.health{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--warn);box-shadow:0 0 0 3px #f0a93b22}
+.dot.ok{background:var(--ok);box-shadow:0 0 0 3px #2fbf7122}
+main{display:grid;grid-template-columns:400px 1fr;gap:22px;padding:22px;max-width:1500px;margin:0 auto}
+@media (max-width:1000px){main{grid-template-columns:1fr}}
+
+/* ---------- phone ---------- */
+.phone-wrap{position:sticky;top:18px;align-self:start;display:flex;flex-direction:column;align-items:center;gap:12px}
+.phone{width:340px;height:700px;border-radius:46px;background:var(--phone);padding:12px;box-shadow:0 30px 80px #0009,inset 0 0 0 2px #2b3442}
+.screen{position:relative;width:100%;height:100%;border-radius:36px;overflow:hidden;background:var(--screen)}
+.statusbar{height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font-size:12px;color:#cfd8e3}
+.notch{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:90px;height:22px;border-radius:12px;background:#000}
+.view{position:absolute;inset:34px 0 0 0;padding:14px;overflow:auto;transition:opacity .25s,transform .25s}
+.view.enter{opacity:0;transform:translateX(24px)}
+.home{background:radial-gradient(circle at 30% 20%,#2c3e75,#0f141b 60%)}
+.clock{font-size:54px;font-weight:300;text-align:center;margin-top:26px}
+.date{text-align:center;color:#b8c4d4;font-size:13px}
+.apps{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:60px;padding:0 6px}
+.app{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:10px;color:#dbe3ec}
+.app i{width:48px;height:48px;border-radius:15px;display:block}
+.pagehead{font-size:24px;font-weight:600;margin:10px 4px 14px}
+.crumb{font-size:11px;color:var(--muted);margin:0 4px}
+.row{display:flex;align-items:center;gap:10px;padding:13px 12px;background:var(--screen-card);border-radius:14px;margin-bottom:8px;font-size:14px;transition:background .3s,box-shadow .3s}
+.row .lbl{flex:1}
+.row .val{font-size:12px;color:var(--muted)}
+.row.hl{background:#23324a;box-shadow:0 0 0 2px var(--accent)}
+.row.done{box-shadow:0 0 0 2px var(--ok)}
+.ico{width:28px;height:28px;border-radius:9px;background:var(--accent);display:grid;place-items:center;font-size:13px}
+.toggle{width:42px;height:24px;border-radius:12px;background:#3a4556;position:relative;transition:background .3s}
+.toggle::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .3s}
+.toggle.on{background:var(--accent)} .toggle.on::after{left:21px}
+.tap{position:absolute;width:44px;height:44px;border-radius:50%;background:#ffffff40;border:2px solid #fff;pointer-events:none;transform:translate(-50%,-50%) scale(.4);opacity:0;transition:all .35s}
+.tap.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.toast{position:absolute;left:14px;right:14px;bottom:18px;padding:12px 14px;border-radius:14px;background:#0f2a1c;border:1px solid var(--ok);color:#bff0d3;font-size:13px;opacity:0;transform:translateY(20px);transition:all .35s}
+.toast.show{opacity:1;transform:none}
+.phone-caption{color:var(--muted);font-size:12px;text-align:center;max-width:330px}
+
+/* ---------- console ---------- */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+.card h2{font-size:14px;margin:0 0 12px;color:#c7d2de;text-transform:uppercase;letter-spacing:.8px;font-weight:600}
+.stack{display:flex;flex-direction:column;gap:18px}
+textarea,select,input{width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:inherit;font-size:14px}
+textarea{min-height:70px;resize:vertical}
+.btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px;align-items:center}
+button{background:var(--chip);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:9px 14px;font:inherit;font-size:13px;cursor:pointer;transition:transform .08s,background .2s}
+button:hover{background:#2a3544} button:active{transform:scale(.97)}
+button.primary{background:linear-gradient(90deg,var(--accent),var(--accent2));border:0;font-weight:600}
+button.ok{background:#153b27;border-color:#1f6b43}
+button:disabled{opacity:.5;cursor:default}
+label.chk{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);width:auto}
+label.chk input{width:auto}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.kpi{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.kpi b{display:block;font-size:20px;margin-top:3px}
+.kpi span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+.goal{border-left:3px solid var(--accent);padding-left:12px;margin-bottom:12px}
+.goal .g{font-size:17px;font-weight:600}
+.goal .t{color:var(--muted);font-size:13px;margin-top:3px}
+.meter{height:6px;background:#26303d;border-radius:4px;overflow:hidden;margin-top:8px;max-width:260px}
+.meter i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--ok))}
+.action{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:10px}
+.action.healthy{opacity:.65}
+.ahead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.aname{font-weight:600;font-size:15px}
+.chip{font-size:11px;padding:3px 8px;border-radius:20px;background:var(--chip);border:1px solid var(--line);color:#c9d4df;white-space:nowrap}
+.chip.auto{background:#10331f;border-color:#1f6b43;color:#9ff0c0}
+.chip.manual{background:#3a2a10;border-color:#7a5418;color:#ffd79b}
+.chip.critical{background:#3a1514;border-color:#83302d;color:#ffb3b1}
+.chip.good{background:#10331f;border-color:#1f6b43;color:#9ff0c0}
+.chip.bad{background:#3a1514;border-color:#83302d;color:#ffb3b1}
+.desc{color:var(--muted);font-size:13px;margin:6px 0 8px}
+ol{margin:6px 0 0;padding-left:20px;font-size:13.5px;line-height:1.55}
+.dl{margin-top:10px;font-size:12px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+code{background:#0b1016;border:1px solid var(--line);padding:2px 6px;border-radius:6px;font-size:11.5px;color:#9fc3ff}
+pre{background:#0b1016;border:1px solid var(--line);border-radius:10px;padding:12px;max-height:420px;overflow:auto;font-size:11.5px;color:#c6d4e3}
+.muted{color:var(--muted);font-size:13px}
+.hidden{display:none}
+.flow{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.flow span{font-size:11px;padding:4px 8px;border-radius:8px;background:var(--panel2);border:1px solid var(--line);color:var(--muted)}
+.flow span.on{border-color:var(--accent);color:#cfe0ff;background:#1b2740}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">F</div>
+  <div>
+    <h1>FixPath · Smart Guided Troubleshooting</h1>
+    <div class="sub">Vague complaint + SIIS article → validated, deeplinked, one-tap plan · Digital twin demo</div>
+  </div>
+  <div class="spacer"></div>
+  <div class="health"><span id="hdot" class="dot"></span><span id="htext">connecting…</span></div>
+</header>
+
+<main>
+  <section class="phone-wrap">
+    <div class="phone"><div class="screen" id="screen">
+      <div class="notch"></div>
+      <div class="statusbar"><span id="sbtime">9:41</span><span>5G ▮▮▮ 82%</span></div>
+      <div class="view home" id="view"></div>
+      <div class="tap" id="tap"></div>
+      <div class="toast" id="toast"></div>
+    </div></div>
+    <div class="phone-caption">Simulated device built from the kit's 578-entry deeplink catalog.
+      Values are the twin's "sensor" readings; <b>Fix it</b> walks the real Settings path and verifies with the validation deeplink.</div>
+  </section>
+
+  <section class="stack">
+    <div class="card">
+      <h2>1 · Complaint</h2>
+      <select id="scenario"><option value="">Pick a kit scenario, or type your own below…</option></select>
+      <textarea id="query" style="margin-top:10px" placeholder="e.g. My screen inputs are delayed and touch feels laggy"></textarea>
+      <div class="btns">
+        <button class="primary" id="go">Diagnose &amp; plan</button>
+        <button id="mic" title="Speak the complaint">🎤 Speak</button>
+        <label class="chk"><input type="checkbox" id="sense" checked> Read device sensors first</label>
+        <label class="chk"><input type="checkbox" id="usesiis" checked> Send SIIS article</label>
+        <button id="probe" title="Send the same query twice and a paraphrase">⚡ Cache probe</button>
+      </div>
+      <div class="flow" id="flow">
+        <span data-s="fp">Fingerprint</span><span data-s="cache">Semantic cache</span><span data-s="build">Segment + retrieve</span>
+        <span data-s="val">Validator</span><span data-s="diag">Sensor diagnosis</span><span data-s="done">Plan</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>2 · Live metrics</h2>
+      <div class="kpis">
+        <div class="kpi"><span>Latency</span><b id="k-lat">–</b></div>
+        <div class="kpi"><span>Path</span><b id="k-path">–</b></div>
+        <div class="kpi"><span>Cache hit rate</span><b id="k-hit">–</b></div>
+        <div class="kpi"><span>Validator fixes</span><b id="k-fix">–</b></div>
+        <div class="kpi"><span>Cost</span><b id="k-cost">–</b></div>
+        <div class="kpi"><span>Requests</span><b id="k-req">–</b></div>
+      </div>
+      <div id="probeout" class="muted" style="margin-top:10px"></div>
+    </div>
+
+    <div class="card">
+      <h2>3 · Plan</h2>
+      <div id="plan" class="muted">No plan yet.</div>
+      <div class="btns"><button id="rawbtn">Show raw JSON</button></div>
+      <pre id="raw" class="hidden"></pre>
+    </div>
+  </section>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const api = (p, body) => fetch(p, body ? {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)} : {}).then(r => r.json());
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+let TWIN = null, SCEN = [], STATE = {}, LAST = null, BY_DEEPLINK = {};
+
+/* ---------------- phone rendering ---------------- */
+const APPS = [["Phone","#2fbf71"],["Messages","#4f8cff"],["Camera","#f0a93b"],["Gallery","#e45dbf"],
+              ["Settings","#7c8ba1"],["Store","#7c5cff"],["Clock","#3cc6d8"],["Notes","#f25f5c"]];
+function setView(html, cls="") {
+  const v = $("#view"); v.className = "view enter " + cls; v.innerHTML = html;
+  requestAnimationFrame(() => v.classList.remove("enter"));
+}
+function renderHome() {
+  const d = new Date();
+  setView(`<div class="clock">${d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}</div>
+    <div class="date">${d.toDateString()}</div>
+    <div class="apps">${APPS.map(([n,c]) => `<div class="app" data-app="${n}"><i style="background:${c}"></i>${n}</div>`).join("")}</div>`, "home");
+}
+function renderSettings(hl) {
+  setView(`<div class="pagehead">Settings</div>` + TWIN.screens.map(s =>
+    `<div class="row ${s.name===hl?"hl":""}" data-screen="${esc(s.name)}"><div class="ico">⚙</div><div class="lbl">${esc(s.name)}</div><div class="val">${s.items.length}</div></div>`).join(""));
+}
+function renderScreen(name, hlKey, doneKey) {
+  const s = TWIN.screens.find(x => x.name === name);
+  const items = s ? s.items : [];
+  const focus = items.filter(i => i.key === hlKey);
+  const rest = items.filter(i => i.key !== hlKey).slice(0, 12);
+  setView(`<div class="crumb">Settings ›</div><div class="pagehead">${esc(name)}</div>` +
+    [...focus, ...rest].map(i => {
+      const on = String(STATE[i.key] ?? i.value).toLowerCase() === "true";
+      const ctl = i.kind === "toggle" ? `<div class="toggle ${on?"on":""}"></div>` : `<div class="val">${esc(STATE[i.key] ?? i.value)}</div>`;
+      return `<div class="row ${i.key===hlKey?"hl":""} ${i.key===doneKey?"done":""}" data-key="${esc(i.key)}"><div class="lbl">${esc(i.key)}</div>${ctl}</div>`;
+    }).join(""));
+}
+async function tapOn(sel) {
+  const el = $("#view").querySelector(sel); const tap = $("#tap");
+  if (!el) return;
+  el.scrollIntoView({block:"center"});
+  await sleep(120);
+  const r = el.getBoundingClientRect(), sr = $("#screen").getBoundingClientRect();
+  tap.style.left = (r.left - sr.left + r.width*0.75) + "px"; tap.style.top = (r.top - sr.top + r.height/2) + "px";
+  tap.classList.add("show"); await sleep(380); tap.classList.remove("show"); await sleep(120);
+}
+function toast(msg) { const t = $("#toast"); t.innerHTML = msg; t.classList.add("show"); setTimeout(() => t.classList.remove("show"), 3800); }
+
+/* ---------------- data ---------------- */
+async function boot() {
+  renderHome();
+  setInterval(() => { $("#sbtime").textContent = new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}); }, 30000);
+  for (let i = 0; i < 240; i++) {
+    try { const h = await api("/health"); if (h.status === "ok") break; $("#htext").textContent = "warming up…"; } catch(e) {}
+    await sleep(500);
+  }
+  $("#hdot").classList.add("ok"); $("#htext").textContent = "API healthy";
+  [TWIN, SCEN] = await Promise.all([api("/v1/twin/catalog"), api("/v1/scenarios")]);
+  for (const s of TWIN.screens) for (const it of s.items) {
+    STATE[it.key] = it.value;
+    for (const e of it.entries) BY_DEEPLINK[e.deeplink] = {screen: s.name, key: it.key, kind: it.kind, type: e.type};
+  }
+  // Seed a realistic fault for the touchscreen demo.
+  STATE["Touch sensitivity"] = "False";
+  $("#scenario").innerHTML += SCEN.map((s, i) => `<option value="${i}">${esc(s.id)} · ${esc(s.query.replace(/^\d+\.\s*/, "").slice(0, 90))}</option>`).join("");
+  refreshMetrics(); setInterval(refreshMetrics, 4000);
+}
+$("#scenario").onchange = e => { const s = SCEN[e.target.value]; if (s) $("#query").value = s.query; };
+
+async function refreshMetrics() {
+  try {
+    const m = await api("/metrics");
+    $("#k-hit").textContent = Math.round(100 * m.cache_hit_rate) + "%";
+    $("#k-req").textContent = m.requests;
+  } catch(e) {}
+}
+
+function flow(stage) {
+  const order = ["fp","cache","build","val","diag","done"];
+  document.querySelectorAll("#flow span").forEach(s => s.classList.toggle("on", order.indexOf(s.dataset.s) <= order.indexOf(stage)));
+}
+
+function payload(q) {
+  const body = {query: q};
+  const sel = SCEN[$("#scenario").value];
+  if ($("#usesiis").checked && sel && sel.query === q) body.siis_response = sel.siis_response;
+  else if ($("#usesiis").checked && sel) body.siis_response = sel.siis_response;
+  if ($("#sense").checked) body.device_state = {...STATE};
+  return body;
+}
+
+$("#go").onclick = async () => {
+  const q = $("#query").value.trim(); if (!q) return;
+  $("#go").disabled = true; flow("fp");
+  const t0 = performance.now();
+  const res = await api("/v1/troubleshoot?debug=1", payload(q));
+  const rtt = performance.now() - t0;
+  const m = res.meta || {};
+  for (const s of ["cache", m.cache_hit ? "val" : "build", "val", "diag", "done"]) { flow(s); await sleep(90); }
+  LAST = res; renderPlan(res, rtt);
+  $("#go").disabled = false; refreshMetrics();
+};
+
+function renderPlan(res, rtt) {
+  const m = res.meta || {};
+  $("#k-lat").textContent = (m.latency_ms ?? 0).toFixed(1) + " ms";
+  $("#k-path").textContent = m.cache_hit ? `cache · ${m.cache_tier}` : (m.path || "–");
+  $("#k-fix").textContent = m.validator_fixes ?? (m.cache_hit ? "0 (cached)" : "–");
+  $("#k-cost").textContent = "$" + (m.cost_usd ?? 0).toFixed(4);
+  $("#raw").textContent = JSON.stringify(res, null, 2);
+  const diag = {}; (m.diagnosis || []).forEach(d => diag[d.key + "|" + d.action] = d);
+  if (!res.contexts || !res.contexts.length) {
+    $("#plan").innerHTML = `<div class="muted">No plan: <code>${esc(res.fallback)}</code>. FixPath never invents steps that are not in the article.</div>`;
+    return;
+  }
+  let html = "";
+  res.contexts.forEach((g, gi) => {
+    html += `<div class="goal"><div class="g">${esc(g.goal)}</div><div class="t">${esc(g.title)} · confidence ${(g.score*100).toFixed(0)}%</div>
+      <div class="meter"><i style="width:${g.score*100}%"></i></div></div>`;
+    g.actions.forEach((a, ai) => {
+      const grp = a.stepGroups[0] || {}; const dl = grp.actionableDeeplink; const val = grp.validationDeeplink;
+      const d = val ? diag[val.key + "|" + a.actionName] : null;
+      const status = d ? (d.status === "healthy" ? `<span class="chip good">sensor: already OK</span>` : d.status === "needs_fix" ? `<span class="chip bad">sensor: needs fix</span>` : "") : "";
+      html += `<div class="action ${d && d.status==="healthy" ? "healthy" : ""}" id="act-${gi}-${ai}">
+        <div class="ahead"><span class="aname">${esc(a.actionName)}</span><span class="chip ${a.category}">${a.category}</span>${status}</div>
+        <div class="desc">${esc(a.description)}</div>
+        <ol>${a.stepGroups.flatMap(s => s.steps).map(s => `<li>${esc(s)}</li>`).join("")}</ol>
+        ${dl ? `<div class="dl">Deeplink <code>${esc(dl.deeplink)}</code> <span class="chip">${esc(dl.message || "")}</span>
+          ${val ? `Validation <code>${esc(val.key)}</code>${val.value ? ` expects <b>${esc(val.value)}</b>` : ""} · now <b>${esc(STATE[val.key] ?? "?")}</b>` : ""}</div>` : ""}
+        <div class="btns">${a.category === "auto" ? `<button class="ok" data-fix="${gi}-${ai}">▶ Fix it</button>` : ""}
+          ${a.category !== "auto" ? `<button data-show="${gi}-${ai}">Walk me through</button>` : ""}</div>
+      </div>`;
+    });
+  });
+  $("#plan").innerHTML = html;
+  document.querySelectorAll("[data-fix]").forEach(b => b.onclick = () => fixIt(b.dataset.fix, b));
+  document.querySelectorAll("[data-show]").forEach(b => b.onclick = () => walk(b.dataset.show));
+}
+
+function stepTargets(steps) {
+  const hops = [];
+  for (const s of steps) {
+    const m = s.match(/(?:Tap|Select|tap)\s+(?:the switch next to\s+)?([A-Z][\w' -]+?)(?:\s+to\b|\.|$)/);
+    if (m) hops.push(m[1].trim());
+  }
+  return hops;
+}
+
+async function fixIt(id, btn) {
+  const [gi, ai] = id.split("-").map(Number);
+  const a = LAST.contexts[gi].actions[ai]; const grp = a.stepGroups[0];
+  const dl = grp.actionableDeeplink, val = grp.validationDeeplink;
+  btn.disabled = true;
+  const target = BY_DEEPLINK[dl.deeplink];
+  const hops = stepTargets(grp.steps);
+  const screen = target ? target.screen : (TWIN.screens.find(s => hops.includes(s.name)) || TWIN.screens[0]).name;
+  const key = target ? target.key : hops[hops.length - 1];
+  renderHome(); await sleep(450);
+  await tapOn('[data-app="Settings"]'); renderSettings(screen); await sleep(500);
+  await tapOn(`[data-screen="${CSS.escape(screen)}"]`); renderScreen(screen, key); await sleep(600);
+  await tapOn(`[data-key="${CSS.escape(key || "")}"]`);
+  if (val && val.value !== undefined && val.value !== null) STATE[val.key] = val.value;
+  else if (target && target.kind === "toggle") STATE[key] = target.type === "offURL" ? "False" : "True";
+  renderScreen(screen, key, key); await sleep(350);
+  if (val) {
+    const v = await api("/v1/verify", {validationDeeplink: val, device_state_after: {...STATE}});
+    toast(v.status === "resolved" ? `✔ Verified via <b>${esc(val.key)}</b> = ${esc(v.current)}` :
+          `↻ ${esc(v.status)}: ${esc(val.key)} is ${esc(v.current)}`);
+    btn.textContent = v.status === "resolved" ? "✔ Verified" : "↻ Retry"; if (v.status !== "resolved") btn.disabled = false;
+  } else { toast(`✔ Opened <b>${esc(dl.message || screen)}</b>`); btn.textContent = "✔ Done"; }
+}
+
+async function walk(id) {
+  const [gi, ai] = id.split("-").map(Number);
+  const a = LAST.contexts[gi].actions[ai];
+  const steps = a.stepGroups.flatMap(s => s.steps);
+  setView(`<div class="crumb">${esc(a.category)} action</div><div class="pagehead">${esc(a.actionName)}</div>` +
+    steps.map((s, i) => `<div class="row" data-step="${i}"><div class="ico">${i + 1}</div><div class="lbl" style="font-size:13px">${esc(s)}</div></div>`).join(""));
+  for (let i = 0; i < steps.length; i++) {
+    await sleep(700);
+    document.querySelectorAll("[data-step]").forEach(r => r.classList.toggle("hl", +r.dataset.step === i));
+    document.querySelector(`[data-step="${i}"]`).scrollIntoView({block: "center", behavior: "smooth"});
+  }
+}
+
+$("#rawbtn").onclick = () => $("#raw").classList.toggle("hidden");
+
+$("#probe").onclick = async () => {
+  const q = $("#query").value.trim(); if (!q) return;
+  const base = payload(q); delete base.device_state;
+  const t = async body => { const s = performance.now(); const r = await api("/v1/troubleshoot?debug=1", body); return [performance.now() - s, r.meta || {}]; };
+  const [a, am] = await t(base); const [b, bm] = await t(base);
+  const para = {...base, query: "honestly " + q.toLowerCase().replace(/^my /, "the ").replace(/[.!]+$/, "") + ", what should I do?"};
+  const [c, cm] = await t(para);
+  $("#probeout").innerHTML = `First call <b>${am.latency_ms} ms</b> (${am.cache_hit ? "cache · " + am.cache_tier : am.path}) ·
+    repeat <b>${bm.latency_ms} ms</b> (${bm.cache_tier}) · paraphrase <b>${cm.latency_ms} ms</b> (${cm.cache_hit ? "cache · " + cm.cache_tier : cm.path})`;
+  refreshMetrics();
+};
+
+$("#mic").onclick = () => {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { alert("Speech recognition is not available in this browser."); return; }
+  const r = new SR(); r.lang = "en-IN"; r.interimResults = false;
+  $("#mic").textContent = "🎙 Listening…";
+  r.onresult = e => { $("#query").value = e.results[0][0].transcript; };
+  r.onend = () => { $("#mic").textContent = "🎤 Speak"; };
+  r.start();
+};
+
+boot();
+</script>
+</body>
+</html>

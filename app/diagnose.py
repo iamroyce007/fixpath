@@ -15,6 +15,7 @@ from typing import Any, Optional
 from app.config import ROOT
 
 CATEGORY_RANK = {"auto": 0, "manual": 1, "critical": 2}
+UNKNOWN_READINGS = {"", "—", "-", "none", "null", "unknown", "?"}
 
 
 @lru_cache(maxsize=1)
@@ -50,8 +51,10 @@ def diagnose(response: dict, device_state: Optional[dict]) -> tuple[dict, list[d
                 if not val or val.get("key") not in device_state:
                     continue
                 current, expected = device_state[val["key"]], expected_for(val)
-                status = ("healthy" if expected is not None and _norm(current) == _norm(expected)
-                          else "needs_fix" if expected is not None else "unknown")
+                if expected is None or _norm(current) in UNKNOWN_READINGS:
+                    status = "unknown"
+                else:
+                    status = "healthy" if _norm(current) == _norm(expected) else "needs_fix"
                 findings.append({"action": a["actionName"], "key": val["key"], "current": current,
                                  "expected": expected, "status": status})
             healthy_flags.append(status == "healthy")

@@ -13,7 +13,7 @@ from typing import Optional
 import numpy as np
 
 from app.catalog import CatalogIndex, Candidate, extract_targets, get_index
-from app.fingerprint import fingerprint, split_complaints, topic_for
+from app.fingerprint import fingerprint, is_device_query, split_complaints, topic_for
 from app.kit import DUMMY_DEEPLINK
 from app.segment import Article
 
@@ -187,8 +187,11 @@ def build_plan(query: str, article: Article, index: Optional[CatalogIndex] = Non
         units = [u for u in all_units]
         _relevance(sq, units, index)
         best = max(u.sim for u in units)
+        # Off-topic complaints must clear an absolute floor; device complaints always get
+        # at least the closest steps the article offers (never invented ones).
+        floor = min(REL_FLOOR, best) if is_device_query(sq) else REL_FLOOR
         keep = [i for i, u in enumerate(units)
-                if u.sim >= max(REL_FLOOR, best - REL_WINDOW) and (len(subqueries) == 1 or i not in used)]
+                if u.sim >= max(floor, best - REL_WINDOW) and (len(subqueries) == 1 or i not in used)]
         keep = sorted(keep, key=lambda i: (-units[i].sim, i))[:MAX_ACTIONS]
         keep.sort()  # article order; the validator then sorts by category (stable)
         if not keep:

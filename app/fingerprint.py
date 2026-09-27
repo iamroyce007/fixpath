@@ -71,6 +71,20 @@ ONSET_RE = re.compile(r"\b(suddenly|by itself|on its own|after (?:an? )?update|n
                       r"right after|after about a month|again)\b")
 
 
+DEVICE_VOCAB_RE = re.compile(
+    r"\b(screen|display|touch\w*|phone|tablet|device|smartphone|mobile|battery|charg\w*|app|apps|"
+    r"setting\w*|wi-?fi|bluetooth|camera|keyboard|notification\w*|volume|sound|button|restart|reboot|"
+    r"crack\w*|flicker\w*|blank|black|lag\w*|frozen|freez\w*|crash\w*|update|email|gmail|transfer|"
+    r"rotat\w*|brightness|pixel\w*|sensitivity|gesture\w*|navigation|sim|data|backup|storage|"
+    r"turn on|turn off|power|boot\w*|signal|network|hotspot|fingerprint|lock)\b",
+    re.I,
+)
+
+
+def is_device_query(query: str) -> bool:
+    return bool(DEVICE_VOCAB_RE.search(query))
+
+
 @dataclass(frozen=True)
 class Fingerprint:
     component: str
